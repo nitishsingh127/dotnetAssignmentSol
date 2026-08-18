@@ -95,8 +95,8 @@ class Program
 // Catch the OperationCanceledException properly and display a "Search canceled" message.
 // Wrap the logic to handle unexpected HttpRequestException scenarios gracefully.  
 // Key Concepts: CancellationTokenSource, CancellationToken, try-catch with async.
-// using System;
- 
+
+ using System; 
 using System.Threading;
 using System.Threading.Tasks;
 using System.Net.Http;
