@@ -1,1 +1,189 @@
 
+//============================================================================================================================================
+// Assignment 1: Async/Await Basics & I/O Operations
+// Objective: Learn to download web content asynchronously without blocking the main execution thread.
+// Task: Create a console application that takes an array of 3 website URLs.
+// Requirements:
+// Use HttpClient to download the HTML content of all three sites.
+// Download the pages concurrently using Task.WhenAll.
+// Measure and display the total execution time.
+// Print the character count of each website's HTML.
+// Key Concepts: async, await, Task.WhenAll, HttpClient.
+//================================================================================================================================================
+ 
+using System;
+using System.Collections.Generic;
+using System.Net.Http;
+using System.Threading.Tasks;
+ 
+class Program
+{
+    static async Task Main()
+    {
+        string[] urls =
+        {
+            "https://www.microsoft.com",
+            "https://www.google.com",
+            "https://www.github.com"
+        };
+ 
+        HttpClient client = new HttpClient();
+ 
+        List<Task<string>> downloadTasks = new List<Task<string>>();
+ 
+        foreach (string url in urls)
+        {
+            Task<string> task = client.GetStringAsync(url);
+            downloadTasks.Add(task);
+        }
+ 
+        string[] htmlPages = await Task.WhenAll(downloadTasks);
+ 
+        for (int i = 0; i < htmlPages.Length; i++)
+        {
+            Console.WriteLine($"URL: {urls[i]}");
+            Console.WriteLine($"Character Count: {htmlPages[i].Length}");
+            Console.WriteLine();
+        }
+    }
+}
+ 
+ 
+//============================================================================================================================================
+// Assignment 2: Desktop UI Responsiveness & Progress Reporting
+// Objective: Simulate a heavy background task in a desktop app (or simulation console) while updating the UI.
+// Task: Create a file processing simulator.
+// Requirements:
+// Simulate processing 100 files in a loop.
+// Each file takes 100ms to process (use Task.Delay).
+// Implement an IProgress<int> parameter to report the percentage completion back to the caller.
+// Ensure the caller updates a progress bar or text output in real-time without freezing.
+// Key Concepts: IProgress<T>, Task.Delay, Thread marshalling.
+ 
+using System;
+using System.Threading.Tasks;
+ 
+class Program
+{
+    static void ShowProgress(int percentage)
+    {
+        Console.Write($"\rProcessing: {percentage}%");
+    }
+    static async Task Main()
+    {
+        IProgress<int> progress =
+            new Progress<int>(ShowProgress);
+ 
+        for (int i = 1; i <= 100; i++)
+        {
+            await Task.Delay(100);
+            progress.Report(i);
+        }
+        Console.WriteLine("\nCompleted!");
+    }
+}
+ 
+// ==============================================================================================================================
+ 
+// Assignment 3: Cancellation Tokens & Exception Handling
+// Objective: Handle user cancellation requests and clean up asynchronous resources safely.
+// Task: Build a search tool that scans a mock database for a specific keyword.
+// Requirements:
+// The search takes 5 seconds to complete.
+// Pass a CancellationToken to the search method.
+// If the user presses the 'C' key, trigger the cancellation.
+// Catch the OperationCanceledException properly and display a "Search canceled" message.
+// Wrap the logic to handle unexpected HttpRequestException scenarios gracefully.  
+// Key Concepts: CancellationTokenSource, CancellationToken, try-catch with async.
+// using System;
+ 
+using System.Threading;
+using System.Threading.Tasks;
+using System.Net.Http;
+ 
+class Program
+{
+    static async Task Main()
+    {
+        CancellationTokenSource cts =
+            new CancellationTokenSource();
+ 
+        Console.WriteLine("Press 'C' to cancel search.");
+        Console.WriteLine();
+ 
+        Task cancelTask = Task.Run(() =>
+        {
+            if (Console.ReadKey(true).Key == ConsoleKey.C)
+            {
+                cts.Cancel();
+            }
+        });
+ 
+        try
+        {
+            string result =
+                await SearchDatabaseAsync(
+                    "Mango",
+                    cts.Token);
+ 
+            Console.WriteLine($"Search Result: {result}");
+        }
+        catch (OperationCanceledException)
+        {
+            Console.WriteLine("Search canceled.");
+        }
+        catch (HttpRequestException ex)
+        {
+            Console.WriteLine(
+                $"Network Error: {ex.Message}");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine(
+                $"Unexpected Error: {ex.Message}");
+        }
+    }
+ 
+    static async Task<string> SearchDatabaseAsync(
+        string keyword,
+        CancellationToken token)
+    {
+        string[] database =
+        {
+            "Apple",
+            "Banana",
+            "Orange",
+            "Mango",
+            "Grapes"
+        };
+ 
+        Console.WriteLine("Searching...");
+ 
+        for (int i = 0; i < 5; i++)
+        {
+            token.ThrowIfCancellationRequested();
+ 
+            await Task.Delay(1000, token);
+ 
+            Console.WriteLine(
+                $"Scanning records... {i + 1}/5");
+        }
+ 
+        foreach (string item in database)
+        {
+            if (item.Equals(
+                keyword,
+                StringComparison.OrdinalIgnoreCase))
+            {
+                return item;
+            }
+        }
+ 
+        return "Not Found";
+    }
+}
+ 
+// ==============================================================================================================================
+ 
+ 
+ 
